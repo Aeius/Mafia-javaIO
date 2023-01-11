@@ -1,7 +1,7 @@
 package com.socket;
 
 public class Cons {
-	// 상수
+	// 식별자
 		static final String CHATTING = "0";
 		static final String JOINPLAYER = "1";
 		static final String READY = "2";
