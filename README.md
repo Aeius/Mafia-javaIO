@@ -4,9 +4,7 @@
 기간 : 2023-01-09 ~ 2023-01-10 (2일)   
 
 ## 🚀 Utillity
-#### java I/O    
-- BuffredReader
-- PrintWriter
+#### java I/O
 #### java Socket
 #### java awt - GUI
 
