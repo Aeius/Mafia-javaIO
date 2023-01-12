@@ -19,4 +19,5 @@ public class Cons {
 		static final String VOTING = "14";
 		static final String MAFIA = "15";
 		static final String GAMEOVER = "16";
+		static final String EXIT = "17";
 }
