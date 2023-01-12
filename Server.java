@@ -386,7 +386,7 @@ public class Server {
 									}
 									
 								}
-								
+								// 클라이언트 종료
 								else if (msgs[0].equals(Cons.EXIT)) {
 									System.out.println("클라이언트 종료");
 									int exitUserIndex = Integer.parseInt(msgs[1]) - 1;
