@@ -11,6 +11,9 @@ import java.awt.TextArea;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +24,9 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Client extends Frame {
 	// 플레이어 패널
@@ -47,13 +52,12 @@ public class Client extends Frame {
 	// 버튼들
 	static Button btnReady = new Button("Ready");
 	static Button btnStart = new Button("Start");
-	Button btnInfo = new Button("info");
 	// 최초 접속 창 닉네임 입력 창
 	Frame login = new Frame("닉네임입력");
 	TextField nameTf = new TextField(20);
 	Button nameBtn = new Button("access");
 	// 시간 초 라벨
-	static Label timer = new Label("5sec");
+	static Label timer = new Label("0sec");
 	// 투표 창
 	static Frame voteFrame = new Frame("투표");
 	static Button vote0 = new Button();
@@ -78,16 +82,16 @@ public class Client extends Frame {
 		playerPanel3.setBackground(Color.GREEN);
 		playerPanel4.setBounds(10, 400, 200, 100);
 		playerPanel4.setBackground(Color.YELLOW);
-		la1.setText("player1");
+		la1.setText("empty");
 		playerPanel.add(la1);
 		playerPanel.add(status1);
-		la2.setText("player2");
+		la2.setText("empty");
 		playerPanel2.add(la2);
 		playerPanel2.add(status2);
-		la3.setText("player3");
+		la3.setText("empty");
 		playerPanel3.add(la3);
 		playerPanel3.add(status3);
-		la4.setText("player4");
+		la4.setText("empty");
 		playerPanel4.add(la4);
 		playerPanel4.add(status4);
 
@@ -125,9 +129,9 @@ public class Client extends Frame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(status1.getText().equals("READY!")
-//						&& status2.getText().equals("READY!")
-//						&& status3.getText().equals("READY!")
-//						&& status4.getText().equals("READY!")
+						&& status2.getText().equals("READY!")
+						&& status3.getText().equals("READY!")
+						&& status4.getText().equals("READY!")
 						) {
 					System.out.println("시작됨!");
 					String msg = Cons.START + "|" + num;
@@ -136,18 +140,6 @@ public class Client extends Frame {
 				} else {
 					System.out.println("준비가 되지않았습니다.");
 				}
-			}
-		});
-		
-		// 설명 버튼 세팅
-		btnInfo.setBounds(790, 150, 50, 50);
-		btnInfo.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("내플레이어 번호 :"+num);
-				System.out.println("내 닉네임:"+name);
-				String msg = Cons.INFO + "|" + num;
-				pw.print(msg);
 			}
 		});
 		
@@ -186,9 +178,7 @@ public class Client extends Frame {
 		// 시간 초 라벨 세팅
 		timer.setBounds(790, 200, 50, 50);
 		
-
 		add(timer);
-		add(btnInfo);
 		add(btnStart);
 		add(btnReady);
 		add(ta);
@@ -202,7 +192,6 @@ public class Client extends Frame {
 		setBounds(100, 100, 900, 600);
 		setVisible(false);
 		
-		
 		// 입장 시 닉네임 입력 GUI
 		login.setLayout(new BorderLayout());
 		login.add(nameTf, BorderLayout.CENTER);
@@ -211,6 +200,19 @@ public class Client extends Frame {
 		nameBtn.addActionListener(new LoginAction());
 		login.setBounds(250, 250, 300, 100);
 		login.setVisible(true);
+		
+		// 종료 버튼 액션
+		addWindowListener(new WindowAdapter(){
+			@Override
+			public void windowClosing(WindowEvent e) {
+				if(isGame == false) {
+					String msg = Cons.EXIT + "|" + num;
+					System.out.println(msg);
+					pw.println(msg);
+					pw.flush();
+				}
+			}
+		});
 	}
 
 	// 입장 시 닉네임 입력 액션
@@ -257,6 +259,7 @@ public class Client extends Frame {
 		}
 	}
 	
+	static boolean isGame = false; 
 	static String num;
 	static String name;
 	static String status = "alive";
@@ -301,11 +304,14 @@ public class Client extends Frame {
 				// 입장 시 각 클라이언트 플레이어 번호 부여 받음
 				else if(msgs[0].equals(Cons.GIVE_NUM)) {
 					num = msgs[1];
+					System.out.println("번호부여 : " + num);
 				}
 				// 입장 완료 및 플레이어 이름 출력
 				else if(msgs[0].equals(Cons.JOINPLAYER)) {
+					System.out.println("유저 입장");
 					String name = msgs[1];
 					String index = msgs[2];
+					System.out.println(name + ":" + index);
 					switch (index) {
 					case "1":la1.setText(name);vote1.setLabel("1-" + name);kill1.setLabel("1-" + name);break;
 					case "2":la2.setText(name);vote2.setLabel("2-" + name);kill2.setLabel("2-" + name);break;
@@ -353,8 +359,10 @@ public class Client extends Frame {
 					// 준비 시작 버튼 비활성화
 					btnReady.setEnabled(false);
 					btnStart.setEnabled(false);
-					ta.append("게임이 시작되었습니다.\n 10초 뒤 게임이 시작됩니다.\n");
+					ta.append("게임이 시작되었습니다.\n 3초 뒤 게임이 시작됩니다.\n");
 					tf.setEnabled(false);
+					// 게임 시작 확인
+					isGame = true;
 				}
 				// 직업 확인
 				else if(msgs[0].equals(Cons.INFO)) {
@@ -486,6 +494,14 @@ public class Client extends Frame {
 					btnStart.setEnabled(true);
 					// 부활
 					status="alive";
+					// 게임 끝 확인
+					isGame = false;
+				}
+				
+				// 클라이언트 종료
+				else if (msgs[0].equals(Cons.EXIT)) {
+					isRun = false;
+					client.dispose();
 				}
 				
 				if(isRun == false)break;
@@ -498,6 +514,7 @@ public class Client extends Frame {
 			if(os!=null)os.close();
 			if(is!=null)is.close();
 			if(sock!=null)sock.close();
+			System.out.println("클라이언트 종료 완료");
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
