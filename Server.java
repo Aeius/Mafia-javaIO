@@ -14,8 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Server {
-	static int count = 0;
-	static int setTime = 60;
+	static final int SET_TIME = 10;
 	static int[] selectedPlayers = {0,0,0,0,0,0};
 	static ArrayList<String> ready = new ArrayList<String>();
 	public static void main(String[] args) {
@@ -47,9 +46,9 @@ public class Server {
 							br = new BufferedReader(isr);
 							pw = new PrintWriter(osw);
 							list.add(pw);
+							
 							// 플레이어 번호 부여
-							count++;
-							String num = Cons.GIVE_NUM + "|" + count;
+							String num = Cons.GIVE_NUM + "|" + list.size();
 							pw.println(num);
 							pw.flush();
 							
@@ -60,6 +59,7 @@ public class Server {
 
 								// 메세지 송수신
 								if (msgs[0].equals(Cons.CHATTING)) {
+									System.out.println("채팅 수신");
 									for (int i = 0; i < list.size(); i++) {
 										PrintWriter w = list.get(i);
 										w.println(msg);
@@ -68,6 +68,7 @@ public class Server {
 								}
 								// 플레이어 입장
 								else if (msgs[0].equals(Cons.JOINPLAYER)) {
+									System.out.println("입장");
 									User newUser = new User(msgs[1], "false"); // 유저 등록
 									userList.add(newUser);
 									for (int j = 0; j < userList.size(); j++) {
@@ -83,6 +84,7 @@ public class Server {
 								}
 								// 준비 표시
 								else if (msgs[0].equals(Cons.READY)) {
+									System.out.println("준비!");
 									msg = Cons.READY + "|";
 									for (int j = 0; j < userList.size(); j++) {
 										User user = userList.get(j);
@@ -140,8 +142,8 @@ public class Server {
 												pw.println(msg);
 												pw.flush();
 											}
-											// 10초 경과 후 낮 시작
-											for(int time = 1; time >= 0; time--) {
+											// 3초 경과 후 낮 시작
+											for(int time = 3; time >= 0; time--) {
 												msg = Cons.TIMER + "|" + time;
 												for (int i = 0; i < list.size(); i++) {
 													PrintWriter w = list.get(i);
@@ -178,13 +180,14 @@ public class Server {
 								}
 								// 낮 시작
 								else if(msgs[0].equals(Cons.DAY_START)) {
+									System.out.println("낮 시작");
 									ready.add(msgs[1]);
 									if(ready.size() % 4 == 0) {
 										Thread timeThr = new Thread() {
 											@Override
 											public void run() {
 												String msg = "";
-												for(int time = 1; time >= 0; time--) {
+												for(int time = SET_TIME; time >= 0; time--) {
 													msg = Cons.TIMER + "|" + time;
 													for (int i = 0; i < list.size(); i++) {
 														PrintWriter w = list.get(i);
@@ -215,6 +218,7 @@ public class Server {
 								}
 								// 낮 끝 -> 투표시작
 								else if(msgs[0].equals(Cons.DAY_END)) {
+									System.out.println("낮 끝");
 									ready.add(msgs[1]);
 									if(ready.size() == 4) {
 										msg = Cons.VOTE_START;
@@ -231,6 +235,7 @@ public class Server {
 								}
 								// 투표 중
 								else if(msgs[0].equals(Cons.VOTING)) {
+									System.out.println(msgs[1] + " 투표완료");
 									int selectedPlayer = 0;
 									if(!msgs[1].equals("skip")) {
 										selectedPlayer = Integer.parseInt(msgs[1]);
@@ -290,6 +295,7 @@ public class Server {
 								}
 								// 밤 시작
 								else if(msgs[0].equals(Cons.NIGHT_START)) {
+									System.out.println("밤 시작");
 									ready.add(msgs[1]);
 									if(ready.size() == 4) {
 										// 킬 선택창의 버튼들에 생존여부 띄워주기
@@ -313,6 +319,7 @@ public class Server {
 								}
 								// 마피아의 죽일 사람 선택
 								else if (msgs[0].equals(Cons.MAFIA)) {
+									System.out.println("킬 타임");
 									String killPlayer = msgs[1];
 									String result = "";
 									for(User user : userList) {
@@ -334,6 +341,7 @@ public class Server {
 								
 								// 현재 상황 체크
 								else if(msgs[0].equals(Cons.RESULT)) {
+									System.out.println("턴 종료 진행 여부 체크");
 									ready.add(msgs[0]);
 									if (ready.size() == 4) {
 										// 생존자 수
@@ -379,6 +387,31 @@ public class Server {
 									
 								}
 								
+								else if (msgs[0].equals(Cons.EXIT)) {
+									System.out.println("클라이언트 종료");
+									int exitUserIndex = Integer.parseInt(msgs[1]) - 1;
+									// 종료 요청한 클라이언트 확인 받아 해당클라이언트 한테만 종료 응답 보냄
+									PrintWriter pw1 = list.get(exitUserIndex);
+									pw1.println(msg);
+									pw1.flush();
+									// list, userList 배열에서 해당 유저 삭제
+									list.remove(exitUserIndex);
+									userList.remove(exitUserIndex);
+									// 유저 번호 갱신
+									for(int i = 1; i <= userList.size(); i++) {
+										User user = userList.get(i - 1);
+										user.num = i + "";
+									}
+									// 나간 유저 패널 empty만들기
+									msg = Cons.JOINPLAYER + "|" +"empty" + "|" + (exitUserIndex + 1);
+									for (int i = 0; i < list.size(); i++) {
+										PrintWriter w = list.get(i);
+										w.println(msg);
+										w.flush();
+									}
+									
+								}
+									
 								if (isRun == false)break;
 							}
 
